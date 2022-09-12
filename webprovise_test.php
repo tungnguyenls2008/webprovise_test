@@ -173,7 +173,6 @@ class Helper
      * @param array $travel_list
      * @param Company $company_model
      * @param $companies
-     * @param Helper $helper
      * @return array
      */
     public function buildCompanyTreeWithAssociatedTravelCost(array $travel_list, Company $company_model, $companies): array
@@ -181,6 +180,7 @@ class Helper
         $cost_list = $this->buildListOfTotalTravelCostByCompanyIDs($travel_list, $company_model, $companies);
         $sum_cost = $this->getSumCost($cost_list);
         $cost_list = $this->getCostList($sum_cost, $cost_list);
+        $cost_list = $this->calculateFatherCost($cost_list);
         return $this->createTree($cost_list);
     }
 
@@ -221,8 +221,7 @@ class Helper
             }
 
         }
-        $sum_cost[0] = array_sum($sum_cost);
-        return $sum_cost;//Sum travel cost of Bid Daddy means the total travel cost itself
+        return $sum_cost;
     }
 
     /**
@@ -242,6 +241,27 @@ class Helper
                 }
             }
         }
+        return $cost_list;
+    }
+
+    /**
+     * calculate the total travel cost of the company
+     * @param array $cost_list
+     * @return array
+     */
+    protected function calculateFatherCost(array $cost_list): array
+    {
+        $father_cost = 0;
+        $father_id = '';
+        foreach ($cost_list as $item) {
+            if ($item['parentId'] == 0) {
+                $father_id = $item['id'];
+            }
+            if ($item['parentId'] == $father_id) {
+                $father_cost += $item['cost'];
+            }//only get the cost of the 1st level branches
+        }
+        $cost_list[$father_id]['cost'] = $father_cost;
         return $cost_list;
     }
 }
